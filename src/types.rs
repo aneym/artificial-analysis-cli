@@ -56,6 +56,8 @@ pub struct CacheData {
 pub struct Config {
     #[serde(rename = "apiKey", skip_serializing_if = "Option::is_none")]
     pub api_key: Option<String>,
+    #[serde(rename = "envFile", skip_serializing_if = "Option::is_none")]
+    pub env_file: Option<String>,
 }
 
 /// Processed model for display

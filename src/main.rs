@@ -8,7 +8,7 @@ use clap::{Parser, Subcommand};
 
 use api::fetch_models;
 use cache::{clear_cache, get_cache_age};
-use config::{get_api_key, load_config, save_config};
+use config::{get_api_key, get_api_key_source, load_config, save_config};
 use format::{print_compare_table, print_model_detail, print_models_table, sort_rows, SortKey};
 use types::ModelRow;
 
@@ -88,6 +88,14 @@ enum Commands {
     Auth {
         /// API key to save (omit to show current key)
         key: Option<String>,
+
+        /// Path to a .env file containing AA_API_KEY
+        #[arg(long)]
+        env_file: Option<String>,
+
+        /// Remove stored key and env-file reference
+        #[arg(long)]
+        clear: bool,
     },
 
     /// Show cache status or clear it
@@ -186,13 +194,50 @@ fn run() -> Result<(), String> {
             }
         }
 
-        Commands::Auth { key } => {
-            if let Some(key) = key {
+        Commands::Auth {
+            key,
+            env_file,
+            clear,
+        } => {
+            if clear {
+                let mut cfg = load_config();
+                cfg.api_key = None;
+                cfg.env_file = None;
+                save_config(&cfg);
+                println!("\x1b[32mConfig cleared.\x1b[0m");
+            } else if let Some(path) = env_file {
+                // Verify the file exists and contains the key before saving
+                let expanded = if path.starts_with('~') {
+                    dirs::home_dir()
+                        .map(|h| path.replacen('~', &h.to_string_lossy(), 1))
+                        .unwrap_or_else(|| path.clone())
+                } else {
+                    path.clone()
+                };
+                if !std::path::Path::new(&expanded).exists() {
+                    return Err(format!("File not found: {path}"));
+                }
+                let mut cfg = load_config();
+                cfg.env_file = Some(path.clone());
+                cfg.api_key = None; // Clear direct key when using env-file
+                save_config(&cfg);
+                // Verify it resolves
+                match get_api_key() {
+                    Some(_) => println!(
+                        "\x1b[32mEnv file saved. AA_API_KEY found in {path}\x1b[0m"
+                    ),
+                    None => println!(
+                        "\x1b[33mWarning: env file saved but AA_API_KEY not found in {path}\x1b[0m"
+                    ),
+                }
+            } else if let Some(key) = key {
                 let mut cfg = load_config();
                 cfg.api_key = Some(key);
+                cfg.env_file = None; // Clear env-file when setting direct key
                 save_config(&cfg);
                 println!("\x1b[32mAPI key saved.\x1b[0m");
             } else {
+                // Show current status
                 match get_api_key() {
                     Some(current) => {
                         let masked = format!(
@@ -201,17 +246,20 @@ fn run() -> Result<(), String> {
                             &current[current.len().saturating_sub(4)..]
                         );
                         println!("Current API key: {masked}");
-                        let source = if std::env::var("AA_API_KEY").is_ok() {
-                            "AA_API_KEY env var"
-                        } else {
-                            "config file"
-                        };
-                        println!("Source: {source}");
+                        println!("Source: {}", get_api_key_source());
+                        let cfg = load_config();
+                        if let Some(ref path) = cfg.env_file {
+                            println!("Env file: {path}");
+                        }
                     }
                     None => {
-                        println!("No API key configured.");
-                        println!("Run: aa auth <your-key>");
-                        println!("Or set: export AA_API_KEY=<your-key>");
+                        println!("No API key configured.\n");
+                        println!("Options:");
+                        println!("  aa auth <key>                     Save key directly");
+                        println!(
+                            "  aa auth --env-file ~/.openclaw/.env   Read from .env file"
+                        );
+                        println!("  export AA_API_KEY=<key>           Environment variable\n");
                         println!(
                             "Get a free key at https://artificialanalysis.ai/account/api"
                         );
