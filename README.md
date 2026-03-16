@@ -7,7 +7,15 @@ Compare 400+ models across intelligence scores, coding benchmarks, pricing, and 
 ## Install
 
 ```bash
-npm install -g artificial-analysis-cli
+cargo install --git https://github.com/aneym/artificial-analysis-cli
+```
+
+Or build from source:
+
+```bash
+git clone https://github.com/aneym/artificial-analysis-cli
+cd artificial-analysis-cli
+cargo install --path .
 ```
 
 ## Setup
