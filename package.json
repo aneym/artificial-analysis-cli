@@ -1,0 +1,46 @@
+{
+  "name": "artificial-analysis-cli",
+  "version": "0.1.0",
+  "description": "CLI for querying AI model benchmarks, pricing, and performance from Artificial Analysis",
+  "type": "module",
+  "bin": {
+    "aa": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli.ts",
+    "start": "node dist/cli.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "ai",
+    "llm",
+    "benchmarks",
+    "model-selection",
+    "artificial-analysis",
+    "pricing",
+    "cli",
+    "gpt",
+    "claude",
+    "gemini",
+    "llama",
+    "model-comparison"
+  ],
+  "author": "Alex Neyman",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alexneyman/artificial-analysis-cli"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "commander": "^13.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.0"
+  }
+}
