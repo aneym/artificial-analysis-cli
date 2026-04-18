@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-/// Raw API response types from Artificial Analysis v2 API
+// ============ LLMs ============
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AAModelCreator {
@@ -52,6 +52,62 @@ pub struct CacheData {
     pub models: Vec<AAModel>,
 }
 
+// ============ Media (TTS / Image / Video / etc.) ============
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AAMediaCreator {
+    pub id: String,
+    pub name: String,
+    #[serde(default)]
+    pub slug: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct AAMediaCategory {
+    #[serde(default)]
+    pub style_category: Option<String>,
+    #[serde(default)]
+    pub subject_matter_category: Option<String>,
+    #[serde(default)]
+    pub format_category: Option<String>,
+    #[serde(default)]
+    pub elo: Option<f64>,
+    #[serde(default)]
+    pub ci95: Option<String>,
+    #[serde(default)]
+    pub appearances: Option<u64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AAMediaModel {
+    pub id: String,
+    pub name: String,
+    pub slug: String,
+    #[serde(default)]
+    pub model_creator: Option<AAMediaCreator>,
+    #[serde(default)]
+    pub elo: Option<f64>,
+    #[serde(default)]
+    pub rank: Option<u64>,
+    #[serde(default)]
+    pub ci95: Option<String>,
+    #[serde(default)]
+    pub appearances: Option<u64>,
+    #[serde(default)]
+    pub release_date: Option<String>,
+    #[serde(default)]
+    pub categories: Option<Vec<AAMediaCategory>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MediaCacheData {
+    #[serde(rename = "fetchedAt")]
+    pub fetched_at: String,
+    pub models: Vec<AAMediaModel>,
+}
+
+// ============ Config ============
+
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Config {
     #[serde(rename = "apiKey", skip_serializing_if = "Option::is_none")]
@@ -60,7 +116,8 @@ pub struct Config {
     pub env_file: Option<String>,
 }
 
-/// Processed model for display
+// ============ Display rows ============
+
 #[derive(Debug, Clone)]
 pub struct ModelRow {
     pub name: String,
@@ -97,5 +154,82 @@ impl ModelRow {
             speed: m.median_output_tokens_per_second,
             ttft: m.median_time_to_first_token_seconds,
         }
+    }
+}
+
+// ============ Media kinds ============
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MediaKind {
+    TextToSpeech,
+    TextToImage,
+    ImageEditing,
+    TextToVideo,
+    ImageToVideo,
+}
+
+impl MediaKind {
+    pub fn all() -> &'static [MediaKind] {
+        &[
+            MediaKind::TextToSpeech,
+            MediaKind::TextToImage,
+            MediaKind::ImageEditing,
+            MediaKind::TextToVideo,
+            MediaKind::ImageToVideo,
+        ]
+    }
+
+    pub fn from_str(s: &str) -> Result<Self, String> {
+        match s.to_lowercase().replace('_', "-").as_str() {
+            "tts" | "voice" | "speech" | "text-to-speech" => Ok(Self::TextToSpeech),
+            "image" | "img" | "text-to-image" | "t2i" => Ok(Self::TextToImage),
+            "image-edit" | "img-edit" | "imgedit" | "image-editing" | "edit" => {
+                Ok(Self::ImageEditing)
+            }
+            "video" | "text-to-video" | "t2v" => Ok(Self::TextToVideo),
+            "img2vid" | "image-to-video" | "i2v" => Ok(Self::ImageToVideo),
+            _ => Err(format!(
+                "Invalid media kind '{s}'. Valid: tts, image, image-edit, video, img2vid"
+            )),
+        }
+    }
+
+    pub fn path(&self) -> &'static str {
+        match self {
+            Self::TextToSpeech => "data/media/text-to-speech",
+            Self::TextToImage => "data/media/text-to-image",
+            Self::ImageEditing => "data/media/image-editing",
+            Self::TextToVideo => "data/media/text-to-video",
+            Self::ImageToVideo => "data/media/image-to-video",
+        }
+    }
+
+    /// Filename-safe slug used for per-endpoint cache files.
+    pub fn slug(&self) -> &'static str {
+        match self {
+            Self::TextToSpeech => "tts",
+            Self::TextToImage => "image",
+            Self::ImageEditing => "image-edit",
+            Self::TextToVideo => "video",
+            Self::ImageToVideo => "img2vid",
+        }
+    }
+
+    pub fn label(&self) -> &'static str {
+        match self {
+            Self::TextToSpeech => "Text-to-Speech",
+            Self::TextToImage => "Text-to-Image",
+            Self::ImageEditing => "Image Editing",
+            Self::TextToVideo => "Text-to-Video",
+            Self::ImageToVideo => "Image-to-Video",
+        }
+    }
+
+    /// Whether this endpoint accepts `?include_categories=true`.
+    pub fn supports_categories(&self) -> bool {
+        matches!(
+            self,
+            Self::TextToImage | Self::TextToVideo | Self::ImageToVideo
+        )
     }
 }

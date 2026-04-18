@@ -2,7 +2,7 @@
 
 CLI for querying AI model benchmarks, pricing, and performance data from [Artificial Analysis](https://artificialanalysis.ai/).
 
-Compare 400+ models across intelligence scores, coding benchmarks, pricing, and speed — all from your terminal.
+Wraps **every** AA v2 data endpoint — LLMs, text-to-speech, text-to-image, image-editing, text-to-video, image-to-video — plus a raw passthrough for anything new.
 
 ## Install
 
@@ -26,71 +26,117 @@ Get a free API key at [artificialanalysis.ai/account/api](https://artificialanal
 aa auth <your-api-key>
 ```
 
-Or set the `AA_API_KEY` environment variable.
-
-## Usage
-
-### List models
+Or set `AA_API_KEY`, or point at a shared `.env`:
 
 ```bash
-# Top models by intelligence score (default)
+aa auth --env-file ~/.config/myapp/.env
+```
+
+## Commands at a glance
+
+```bash
+aa endpoints            # list every supported endpoint
+aa models               # LLMs — quality, pricing, speed (400+ models)
+aa tts                  # text-to-speech rankings (aliases: voice, speech)
+aa image                # text-to-image rankings (alias: img)
+aa image-edit           # image editing rankings
+aa video                # text-to-video rankings
+aa img2vid              # image-to-video rankings (alias: i2v)
+aa media <kind>         # generic form of all of the above
+aa raw <path>           # raw JSON from any AA v2 endpoint
+aa show <model>         # model detail (--kind <llm|tts|image|...> to switch)
+aa compare a b c        # side-by-side (--kind to switch)
+aa cache                # cache ages per endpoint (--clear, --clear --all)
+aa auth                 # API key management
+```
+
+Every list command accepts `--json` for programmatic output.
+
+## LLMs
+
+```bash
+# Top models by intelligence (default)
 aa models
 
-# Sort by cost (cheapest first)
-aa models --sort cost
-
-# Sort by quality-per-dollar
+# Sort by cost, value, speed, coding, math
 aa models --sort value
+aa models --sort cost --cheap
 
-# Sort by speed, coding, or math
-aa models --sort speed
-aa models --sort coding
-aa models --sort math
+# Filter
+aa models --filter flash --creator google
+aa models --min-quality 40 --max-cost 5
 
-# Budget models only (output price < $1/M tokens)
-aa models --cheap
+# Raw JSON
+aa models --json -n 5 | jq
+```
 
-# Filter by name
-aa models --filter "flash"
-aa models --filter "gemini"
+## Media (TTS, image, video, editing)
+
+Every media command supports the same flags:
+
+```bash
+# Top 10 voice models by ELO
+aa tts -n 10
+
+# Best text-to-image model by ELO
+aa image --sort elo -n 1
+
+# Newest image-to-video models
+aa img2vid --sort recent -n 5
 
 # Filter by creator
-aa models --creator google
-aa models --creator openai
+aa image --creator openai
+aa tts --creator elevenlabs
 
-# Combine filters
-aa models --cheap --sort value --min-quality 15
-aa models --creator anthropic --sort cost
+# Per-category ELO breakdown (image + video endpoints only)
+aa image --categories
+aa show "Nano Banana 2" --kind image --categories
 
-# Show all models (default shows top 30)
-aa models --all
+# JSON for scripting
+aa tts --json -a | jq '.[] | select(.elo > 1150) | .name'
 ```
 
-### Compare models side-by-side
+## Compare across kinds
 
 ```bash
-aa compare gpt-4o-mini claude-4-5-haiku flash-lite
-aa compare "gpt-5" "claude-sonnet-4" "gemini-3-flash"
+# LLMs (default kind)
+aa compare gpt-5 claude-opus-4-7 gemini-3-pro
+
+# TTS
+aa compare "Inworld TTS 1.5 Max" "Eleven v3" "Gemini 3.1 Flash TTS" --kind tts
+
+# Image
+aa compare "GPT Image 1.5" "Nano Banana 2" "Riverflow 2.0" --kind image
 ```
 
-### Show model details
+`aa show <model>` works the same way:
 
 ```bash
-aa show flash-lite
-aa show gpt-4o-mini
+aa show "Eleven v3" --kind tts
+aa show "GPT Image 1.5" --kind image --categories
 ```
 
-### Cache management
+## Raw passthrough
 
-Data is cached for 24 hours to stay within rate limits.
+For anything this CLI doesn't wrap yet:
 
 ```bash
-aa cache          # Show cache age
-aa cache --clear  # Force fresh data on next request
-aa models --refresh  # One-time refresh
+aa raw data/media/text-to-image --query include_categories=true --pretty | jq
+aa raw data/llms/models | jq '.data | length'
 ```
 
-## API Tiers
+## Cache
+
+Per-endpoint caches with a 24h TTL — one key buys hundreds of models.
+
+```bash
+aa cache                 # ages for every endpoint you've touched
+aa cache --clear         # clear LLM cache only
+aa cache --clear --all   # clear every cache
+aa models --refresh      # one-shot refresh (bypasses cache)
+```
+
+## API tiers
 
 This CLI wraps the [Artificial Analysis API](https://artificialanalysis.ai/api-reference). The data available depends on your API tier:
 
@@ -99,29 +145,17 @@ This CLI wraps the [Artificial Analysis API](https://artificialanalysis.ai/api-r
 | LLM intelligence, coding, math indices           | Yes        | Yes        |
 | Pricing (input/output per M tokens)              | Yes        | Yes        |
 | Output speed & TTFT                              | Yes        | Yes        |
+| Media ELO leaderboards (TTS, image, video, etc.) | Yes        | Yes        |
 | Rate limit                                       | 25 req/day | Custom     |
 | Prompt length benchmarks (10k, 100k)             | No         | Yes        |
 | Provider-level benchmarks (Azure, Bedrock, etc.) | No         | Yes        |
 | CritPt benchmark evaluation                      | 10 req/day | Custom     |
 
-The free tier is sufficient for most use cases — the CLI caches aggressively (24h TTL) so a single API call fetches all 400+ models.
+Caches default to 24h — one API call per endpoint per day is plenty.
 
-For commercial API access, contact [hello@artificialanalysis.ai](mailto:hello@artificialanalysis.ai).
-
-## Data Attribution
+## Data attribution
 
 All data provided by [Artificial Analysis](https://artificialanalysis.ai/). Attribution is required per their API terms.
-
-## Contributing
-
-PRs welcome! Some ideas:
-
-- [ ] JSON output mode (`--json`) for piping
-- [ ] CSV export
-- [ ] Model recommendation engine (best model for budget + task type)
-- [ ] Eval harness integration (run your own benchmarks, compare to AA scores)
-- [ ] Provider-level pricing comparison
-- [ ] Historical trend tracking
 
 ## License
 

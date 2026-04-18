@@ -49,8 +49,8 @@ fn read_key_from_env_file(path: &str, key_name: &str) -> Option<String> {
         if trimmed.is_empty() || trimmed.starts_with('#') {
             continue;
         }
-        if let Some((k, v)) = trimmed.split_once('=') {
-            if k.trim() == key_name {
+        if let Some((k, v)) = trimmed.split_once('=')
+            && k.trim() == key_name {
                 let val = v.trim();
                 // Strip surrounding quotes
                 let unquoted = if (val.starts_with('"') && val.ends_with('"'))
@@ -64,7 +64,6 @@ fn read_key_from_env_file(path: &str, key_name: &str) -> Option<String> {
                     return Some(unquoted.to_string());
                 }
             }
-        }
     }
     None
 }
@@ -75,27 +74,24 @@ fn read_key_from_env_file(path: &str, key_name: &str) -> Option<String> {
 /// 3. Config file's env_file path → read AA_API_KEY from it
 pub fn get_api_key() -> Option<String> {
     // 1. Environment variable
-    if let Ok(val) = std::env::var("AA_API_KEY") {
-        if !val.is_empty() {
+    if let Ok(val) = std::env::var("AA_API_KEY")
+        && !val.is_empty() {
             return Some(val);
         }
-    }
 
     let cfg = load_config();
 
     // 2. Direct key in config
-    if let Some(ref key) = cfg.api_key {
-        if !key.is_empty() {
+    if let Some(ref key) = cfg.api_key
+        && !key.is_empty() {
             return Some(key.clone());
         }
-    }
 
     // 3. env_file path in config
-    if let Some(ref env_path) = cfg.env_file {
-        if let Some(key) = read_key_from_env_file(env_path, "AA_API_KEY") {
+    if let Some(ref env_path) = cfg.env_file
+        && let Some(key) = read_key_from_env_file(env_path, "AA_API_KEY") {
             return Some(key);
         }
-    }
 
     None
 }
