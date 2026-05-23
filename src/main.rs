@@ -7,19 +7,17 @@ mod types;
 use clap::{Parser, Subcommand};
 
 use api::{fetch_media, fetch_models, fetch_raw};
-use cache::{
-    clear_all_caches, clear_cache, get_cache_age, get_media_cache_age, list_cache_ages,
-};
+use cache::{clear_all_caches, clear_cache, get_cache_age, get_media_cache_age, list_cache_ages};
 use config::{get_api_key, get_api_key_source, load_config, save_config};
 use format::{
-    print_compare_table, print_media_compare_table, print_media_detail, print_media_table,
-    print_model_detail, print_models_table, sort_media, sort_rows, MediaSortKey, SortKey,
+    MediaSortKey, SortKey, print_compare_table, print_media_compare_table, print_media_detail,
+    print_media_table, print_model_detail, print_models_table, sort_media, sort_rows,
 };
 use types::{AAMediaModel, MediaKind, ModelRow};
 
 #[derive(Parser)]
 #[command(
-    name = "aa",
+    name = "aa-cli",
     about = "Query AI model benchmarks, pricing, and performance from Artificial Analysis",
     version = env!("CARGO_PKG_VERSION")
 )]
@@ -28,7 +26,7 @@ struct Cli {
     command: Commands,
 }
 
-/// Shared filter/sort options for every `aa <media-kind>` subcommand.
+/// Shared filter/sort options for every `aa-cli <media-kind>` subcommand.
 #[derive(clap::Args, Clone)]
 struct MediaArgs {
     /// Sort by: rank, elo, appearances, recent
@@ -168,7 +166,7 @@ enum Commands {
     #[command(alias = "i2v")]
     Img2vid(MediaArgs),
 
-    /// Generic media lookup: aa media <kind> [options]
+    /// Generic media lookup: aa-cli media <kind> [options]
     Media {
         /// Media kind: tts, image, image-edit, video, img2vid
         kind: String,
@@ -265,7 +263,11 @@ fn run_media(kind: MediaKind, args: MediaArgs) -> Result<(), String> {
     apply_media_filters(&mut rows, &args);
     sort_media(&mut rows, sort_key);
 
-    let limit = if args.all { None } else { Some(args.limit.unwrap_or(30)) };
+    let limit = if args.all {
+        None
+    } else {
+        Some(args.limit.unwrap_or(30))
+    };
 
     if args.json {
         let out: Vec<&AAMediaModel> = match limit {
@@ -458,8 +460,10 @@ fn run() -> Result<(), String> {
             pretty,
         } => {
             let parsed = parse_raw_query(&query)?;
-            let tuples: Vec<(&str, &str)> =
-                parsed.iter().map(|(k, v)| (k.as_str(), v.as_str())).collect();
+            let tuples: Vec<(&str, &str)> = parsed
+                .iter()
+                .map(|(k, v)| (k.as_str(), v.as_str()))
+                .collect();
             let value = fetch_raw(&path, &tuples)?;
             let out = if pretty {
                 serde_json::to_string_pretty(&value)
@@ -473,13 +477,41 @@ fn run() -> Result<(), String> {
         Commands::Endpoints => {
             println!("\x1b[1mAA v2 endpoints covered by this CLI\x1b[0m\n");
             let rows: &[(&str, &str, &str)] = &[
-                ("aa models",     "data/llms/models",           "LLM benchmarks, pricing, speed"),
-                ("aa tts",        "data/media/text-to-speech",  "Text-to-speech rankings"),
-                ("aa image",      "data/media/text-to-image",   "Text-to-image rankings"),
-                ("aa image-edit", "data/media/image-editing",   "Image-editing rankings"),
-                ("aa video",      "data/media/text-to-video",   "Text-to-video rankings"),
-                ("aa img2vid",    "data/media/image-to-video",  "Image-to-video rankings"),
-                ("aa raw <path>", "(any)",                      "Raw passthrough for any endpoint"),
+                (
+                    "aa-cli models",
+                    "data/llms/models",
+                    "LLM benchmarks, pricing, speed",
+                ),
+                (
+                    "aa-cli tts",
+                    "data/media/text-to-speech",
+                    "Text-to-speech rankings",
+                ),
+                (
+                    "aa-cli image",
+                    "data/media/text-to-image",
+                    "Text-to-image rankings",
+                ),
+                (
+                    "aa-cli image-edit",
+                    "data/media/image-editing",
+                    "Image-editing rankings",
+                ),
+                (
+                    "aa-cli video",
+                    "data/media/text-to-video",
+                    "Text-to-video rankings",
+                ),
+                (
+                    "aa-cli img2vid",
+                    "data/media/image-to-video",
+                    "Image-to-video rankings",
+                ),
+                (
+                    "aa-cli raw <path>",
+                    "(any)",
+                    "Raw passthrough for any endpoint",
+                ),
             ];
             for (cmd, path, desc) in rows {
                 println!(
@@ -488,7 +520,7 @@ fn run() -> Result<(), String> {
                 );
             }
             println!(
-                "\n\x1b[2mUse --json on any list command for programmatic output.\nUse `aa show <model> --kind <kind>` for a single model's detail.\nUse `aa compare a b c --kind <kind>` for side-by-side comparison.\x1b[0m"
+                "\n\x1b[2mUse --json on any list command for programmatic output.\nUse `aa-cli show <model> --kind <kind>` for a single model's detail.\nUse `aa-cli compare a b c --kind <kind>` for side-by-side comparison.\x1b[0m"
             );
         }
 
@@ -550,10 +582,8 @@ fn run() -> Result<(), String> {
                     None => {
                         println!("No API key configured.\n");
                         println!("Options:");
-                        println!("  aa auth <key>                     Save key directly");
-                        println!(
-                            "  aa auth --env-file ~/.openclaw/.env   Read from .env file"
-                        );
+                        println!("  aa-cli auth <key>                 Save key directly");
+                        println!("  aa-cli auth --env-file ~/.openclaw/.env   Read from .env file");
                         println!("  export AA_API_KEY=<key>           Environment variable\n");
                         println!("Get a free key at https://artificialanalysis.ai/account/api");
                     }

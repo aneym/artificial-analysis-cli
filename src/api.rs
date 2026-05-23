@@ -6,7 +6,7 @@ const BASE_URL: &str = "https://artificialanalysis.ai/api/v2";
 
 fn require_api_key() -> Result<String, String> {
     get_api_key().ok_or_else(|| {
-        "No API key configured. Run `aa auth <key>` or set AA_API_KEY environment variable.\n\
+        "No API key configured. Run `aa-cli auth <key>` or set AA_API_KEY environment variable.\n\
          Get a free key at https://artificialanalysis.ai/account/api"
             .to_string()
     })
@@ -56,10 +56,9 @@ fn unwrap_data(body: serde_json::Value) -> serde_json::Value {
 }
 
 pub fn fetch_models(force_refresh: bool) -> Result<Vec<AAModel>, String> {
-    if !force_refresh
-        && let Some(cached) = get_cached_models() {
-            return Ok(cached);
-        }
+    if !force_refresh && let Some(cached) = get_cached_models() {
+        return Ok(cached);
+    }
     let body = http_get("data/llms/models", &[])?;
     let data = unwrap_data(body);
     let models: Vec<AAModel> =
@@ -73,10 +72,9 @@ pub fn fetch_media(
     include_categories: bool,
     force_refresh: bool,
 ) -> Result<Vec<AAMediaModel>, String> {
-    if !force_refresh
-        && let Some(cached) = get_cached_media(kind, include_categories) {
-            return Ok(cached);
-        }
+    if !force_refresh && let Some(cached) = get_cached_media(kind, include_categories) {
+        return Ok(cached);
+    }
     let query: Vec<(&str, &str)> = if include_categories && kind.supports_categories() {
         vec![("include_categories", "true")]
     } else {
@@ -91,7 +89,7 @@ pub fn fetch_media(
 }
 
 /// Raw passthrough: call any AA v2 path with arbitrary query parameters.
-/// Used by `aa raw <path>` to stay forward-compatible with unwrapped endpoints.
+/// Used by `aa-cli raw <path>` to stay forward-compatible with unwrapped endpoints.
 pub fn fetch_raw(path: &str, query: &[(&str, &str)]) -> Result<serde_json::Value, String> {
     http_get(path, query)
 }

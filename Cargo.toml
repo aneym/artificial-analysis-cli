@@ -10,7 +10,7 @@ keywords = ["ai", "llm", "benchmarks", "cli", "model-comparison"]
 categories = ["command-line-utilities"]
 
 [[bin]]
-name = "aa"
+name = "aa-cli"
 path = "src/main.rs"
 
 [dependencies]
