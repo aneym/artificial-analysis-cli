@@ -23,7 +23,7 @@ The installed binary is `aa-cli`, avoiding a collision with macOS `/usr/bin/aa`
 
 ## Setup
 
-Get a free API key at [artificialanalysis.ai/account/api](https://artificialanalysis.ai/account/api), then:
+Get a free API key at [artificialanalysis.ai/data-api](https://artificialanalysis.ai/data-api) (click "Create a free API key" — you'll sign in or create an account, then land on your organization's API key management page), then:
 
 ```bash
 aa-cli auth <your-api-key>
@@ -143,24 +143,26 @@ aa-cli models --refresh      # one-shot refresh (bypasses cache)
 
 ## API tiers
 
-This CLI wraps the [Artificial Analysis API](https://artificialanalysis.ai/api-reference). The data available depends on your API tier:
+This CLI wraps the [Artificial Analysis API](https://artificialanalysis.ai/data-api/docs). The data available depends on your API tier:
 
-| Feature                                          | Free       | Commercial |
-| ------------------------------------------------ | ---------- | ---------- |
-| LLM intelligence, coding, math indices           | Yes        | Yes        |
-| Pricing (input/output per M tokens)              | Yes        | Yes        |
-| Output speed & TTFT                              | Yes        | Yes        |
-| Media ELO leaderboards (TTS, image, video, etc.) | Yes        | Yes        |
-| Rate limit                                       | 25 req/day | Custom     |
-| Prompt length benchmarks (10k, 100k)             | No         | Yes        |
-| Provider-level benchmarks (Azure, Bedrock, etc.) | No         | Yes        |
-| CritPt benchmark evaluation                      | 10 req/day | Custom     |
+| Feature                                          | Free        | Pro           | Commercial  |
+| ------------------------------------------------ | ----------- | ------------- | ----------- |
+| LLM intelligence, coding, math indices           | Yes         | Yes           | Yes         |
+| Pricing (input/output per M tokens)              | Yes         | Yes (+blended)| Yes         |
+| Output speed & TTFT (medians)                    | Yes         | Yes (+percentiles) | Yes    |
+| Media ELO leaderboards (TTS, image, video, etc.) | Free tier   | Yes           | Yes         |
+| Model detail endpoint (full evaluations)         | No          | Yes           | Yes         |
+| Provider-level benchmarks (Azure, Bedrock, etc.) | No          | No            | Yes         |
+| Performance over time (7/30/90 day)              | No          | No            | Yes         |
+| Rate limit                                       | 100 req/day | 500 req/day   | Custom      |
+
+Rate limits reset daily at 00:00 UTC. Every response includes `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers.
 
 Caches default to 24h - one API call per endpoint per day is plenty.
 
 ## Data attribution
 
-All data provided by [Artificial Analysis](https://artificialanalysis.ai/). Attribution is required per their API terms.
+All data provided by [Artificial Analysis](https://artificialanalysis.ai/). Attribution is required across all tiers per their [API terms](https://artificialanalysis.ai/data-api/docs#attribution-and-licensing).
 
 ## License
 

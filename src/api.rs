@@ -7,7 +7,7 @@ const BASE_URL: &str = "https://artificialanalysis.ai/api/v2";
 fn require_api_key() -> Result<String, String> {
     get_api_key().ok_or_else(|| {
         "No API key configured. Run `aa-cli auth <key>` or set AA_API_KEY environment variable.\n\
-         Get a free key at https://artificialanalysis.ai/account/api"
+         Get a free key at https://artificialanalysis.ai/data-api"
             .to_string()
     })
 }
@@ -15,13 +15,13 @@ fn require_api_key() -> Result<String, String> {
 fn check_status(status: reqwest::StatusCode) -> Result<(), String> {
     if status == reqwest::StatusCode::UNAUTHORIZED {
         return Err(
-            "Invalid API key. Check your key at https://artificialanalysis.ai/account/api"
+            "Invalid API key. Check your key at https://artificialanalysis.ai/data-api"
                 .to_string(),
         );
     }
     if status == reqwest::StatusCode::TOO_MANY_REQUESTS {
         return Err(
-            "Rate limit exceeded (25 requests/day on free tier). Try again tomorrow or use cached data."
+            "Rate limit exceeded (100 requests/day on free tier; 500 on Pro). Try again tomorrow or use cached data."
                 .to_string(),
         );
     }

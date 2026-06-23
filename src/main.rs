@@ -585,7 +585,7 @@ fn run() -> Result<(), String> {
                         println!("  aa-cli auth <key>                 Save key directly");
                         println!("  aa-cli auth --env-file ~/.openclaw/.env   Read from .env file");
                         println!("  export AA_API_KEY=<key>           Environment variable\n");
-                        println!("Get a free key at https://artificialanalysis.ai/account/api");
+                        println!("Get a free key at https://artificialanalysis.ai/data-api");
                     }
                 }
             }
